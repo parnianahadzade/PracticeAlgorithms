@@ -24,7 +24,6 @@ public class ReversePrefixOfWord {
 //
 //        return newWord;
 
-
         //solving without string builder
         int indexOfCh = word.indexOf(ch);
         if (indexOfCh == -1) {
