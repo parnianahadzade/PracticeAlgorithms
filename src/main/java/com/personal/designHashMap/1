@@ -1,0 +1,210 @@
+What is a Data Structure?
+
+A data structure is a way of organizing data in memory so that we can use it efficiently.
+
+Think of memory (RAM) as a huge row of numbered boxes.
+A data structure tells us how to arrange and connect those boxes.
+
+Examples:
+Data structure	What it feels like
+Array	        Boxes in a straight line (quick random access by index).
+Linked list	    Boxes connected with arrows (easy insert/delete in the middle).
+Stack / Queue	Boxes with rules: last-in-first-out (stack) or first-in-first-out (queue).
+Hash map	    A giant cabinet with drawers and a smart address system.
+
+------------------------------------------------------------------------------------
+
+The Key–Value Concept: Where do Key and Value Live?
+
+A hash map stores pairs: each pair is (key, value).
+
+Are the keys really stored?
+
+Absolutely yes.
+Both the key and the value are stored in memory, side by side (often in a small object like a Map.Entry in Java).
+Why?
+
+Because when you later ask for a value, the map must compare the stored key with the one you give.
+The hash function only points to a drawer; inside the drawer, the map checks the actual key to be sure it’s correct.
+
+💡 The hash code alone is not enough, because two different keys can accidentally have the same hash (called a collision).
+
+So what happens in memory?
+
+Hashing
+The map takes your key (for example "Alice"), runs the hash function, and gets an index (for example bucket 42).
+
+Storing
+In bucket 42, it puts an entry object that contains:
+
+the key ("Alice")
+
+the value (say 27)
+
+sometimes also the precomputed hash code to speed up comparisons.
+
+Retrieving
+Later, when you call get("Alice"), it:
+
+hashes "Alice" again (still bucket 42)
+
+goes to that bucket
+
+looks through the small list there and checks each stored key with equals() until it finds "Alice".
+
+So the key is not just a hint;
+it’s a real piece of data kept in memory alongside its value.
+
+---------------------------------------------------------------------------------------------
+
+## 1️⃣ Arrays
+
+Think of an array as **boxes lined up in a row** with consecutive numbers (indexes).
+
+### How it works
+
+* Each cell in the array has an **index** starting from 0.
+* You can access any element instantly with its index:
+  `arr[5]` jumps straight to box number 5.
+
+### Pros
+
+* **Fast random access**: O(1) time to read or write by index.
+* Simple and memory–efficient for fixed-size data.
+
+### Cons
+
+* **Fixed size**: Changing the size often means creating a new array.
+* **Expensive insert/delete in the middle**: You have to shift many elements.
+
+---
+
+## 2️⃣ Linked Lists
+
+A linked list is like a **chain of nodes**.
+Each node holds a value and a pointer (reference) to the next node.
+
+### How it works
+
+```
+[Data|Next] -> [Data|Next] -> [Data|Next] -> null
+```
+
+### Pros
+
+* **Flexible size**: You can grow or shrink easily.
+* **Cheap insert/delete** once you know where to cut and join.
+
+### Cons
+
+* **Slow access by position**: To get the 5th element you must walk from the start.
+* Extra memory for all the `next` pointers.
+
+---
+
+## 3️⃣ Hash Maps
+
+A hash map is like a **big array of buckets**, but instead of numeric indexes, you use any key (like a string or an integer).
+A **hash function** converts the key to an index.
+
+| Operation          | Average time                             |
+| ------------------ | ---------------------------------------- |
+| put / get / remove | O(1) with a good hash and low collisions |
+
+Inside each bucket there’s usually a small linked list (or a more advanced structure like a tree) to hold entries that hash to the same index.
+
+---
+
+## 4️⃣ Arrays vs Linked Lists vs Hash Maps
+
+| Feature              | Array                 | Linked List          | Hash Map                                        |
+| -------------------- | --------------------- | -------------------- | ----------------------------------------------- |
+| Access by index/key  | O(1)                  | O(n)                 | O(1) average (by key, not numeric index)        |
+| Insert/Delete middle | O(n) (shift elements) | O(1) if node known   | O(1) average                                    |
+| Memory overhead      | Minimal               | Extra for pointers   | Extra for buckets and nodes                     |
+| Order of elements    | Keeps strict order    | Keeps order by links | No guaranteed order (unless using special maps) |
+
+------------------------------------------------------------------------------------------------------------------------
+
+# 1) what actually is an index?
+
+**short answer:** an index is a zero-based position number.
+
+**longer (but still simple):**
+
+* In an **array**, memory is a contiguous row of cells. If `arr` starts at address `BASE`, then `arr[i]` lives at `BASE + i * sizeof(element)`.
+  So the **index** `i` is literally “how many elements to skip from the start.”
+* In a **hash map**, you don’t use numeric indexes directly. The **hash function** turns your key into a **bucket index** (an array slot in the internal table). You then look inside that bucket to find the key/value entry.
+
+---
+
+# 2) why is insert/delete cheap for a linked list but not for an array?
+
+**arrays**
+
+* Memory is contiguous. If you insert at position `k`, everything from `k` to the end must shift right one cell.
+  If you delete at `k`, everything after it must shift left.
+  Those shifts are **O(n)** in the worst case.
+* Also, if the array is full and you need more space, you allocate a bigger array and **copy** everything (**resize**).
+
+**linked lists**
+
+* Each node points to the next. To insert or remove **when you already have the node/reference** (e.g., you’re holding a pointer to “previous”):
+
+  * **Insert**: change 2 pointers (`prev.next = newNode`, `newNode.next = oldNext`) → **O(1)**.
+  * **Delete**: change 1 pointer (`prev.next = node.next`) → **O(1)**.
+* The trade-off: **finding** the spot is slower (no random access by index; you walk nodes one by one).
+
+So: arrays are great for **fast random access**; linked lists are great for **fast local edits** (inserts/deletes) once you’re at the right spot.
+
+------------------------------------------------------------------------------------------------------------------------
+
+in **real-world general-purpose hash tables (including Java’s built-in `HashMap`) the default strategy is *separate chaining***, i.e. each array slot (bucket) holds a small linked list or a tree of entries.
+
+Here’s why that approach is preferred in most mainstream libraries:
+
+---
+
+## 1️⃣  Why Separate Chaining (linked lists / trees) is so common
+
+| Advantage                                     | Explanation                                                                                                                              |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Simple deletion**                           | Just unlink a node from the list; no need for tombstones or complex re-insertion.                                                        |
+| **Predictable performance even at high load** | You can safely go beyond 70% fill without drastic slow-downs; resizing can be less frequent.                                             |
+| **Easy to mix in trees**                      | Java 8+ `HashMap` turns a bucket’s list into a balanced red–black tree when it grows too long, improving worst-case lookups to O(log n). |
+| **Good for non-integer keys**                 | Works well with complex object keys, custom `equals()`, and variable hash qualities.                                                     |
+
+---
+
+## 2️⃣  Quick mental picture
+
+```
+table[] (array of buckets)
+   |
+   +--> bucket 0:  [keyA->valA] -> [keyB->valB]  (linked list)
+   |
+   +--> bucket 1:  [keyX->valX]
+   |
+   +--> bucket 2:  empty
+   |
+   ...
+```
+
+* Each bucket is a **linked list** (or a small tree once big).
+* The hash function only decides **which bucket**.
+* Collisions are handled by **chaining** inside that bucket.
+
+---
+
+## 4️⃣  Comparison at a glance
+
+| Strategy              | Used in Java HashMap? | Deletion         | Load factor tolerance | Cache friendliness |
+| --------------------- | --------------------- | ---------------- | --------------------- | ------------------ |
+| **Separate chaining** | ✅ Yes                 | Simple           | Good, \~0.75 default  | Moderate           |
+| **Linear probing**    | ❌ No                  | Needs tombstones | Sensitive to load     | High               |
+| **Quadratic probing** | ❌ No                  | Needs tombstones | Sensitive to load     | Medium             |
+
+------------------------------------------------------------------------------------------------------------------------
+
+
+
